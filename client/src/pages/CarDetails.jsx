@@ -18,6 +18,20 @@ const CarDetails = () => {
 
   const handleSubmit = async (e)=>{
     e.preventDefault();
+    // --- ADD THIS VALIDATION LOGIC ---
+  if (!pickupDate || !returnDate) {
+    toast.error("Please select both pickup and return dates.");
+    return;
+  }
+
+  const pickupDateObj = new Date(pickupDate);
+  const returnDateObj = new Date(returnDate);
+
+  if (returnDateObj < pickupDateObj) {
+    toast.error('Return date cannot be earlier than the pickup date.');
+    return; // Stop the submission
+  }
+  // --- END OF VALIDATION ---
     try {
       const {data} = await axios.post('/api/bookings/create', {
         car: id,
@@ -32,7 +46,7 @@ const CarDetails = () => {
         toast.error(data.message)
       }
     } catch (error) {
-      toast.error(error.message)
+      toast.error(error.response?.data?.message || "An unexpected error occurred.")
     }
   }
 

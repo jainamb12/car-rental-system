@@ -43,6 +43,19 @@ export const createBooking = async (req, res)=>{
         const {_id} = req.user;
         const {car, pickupDate, returnDate} = req.body;
 
+        // ---  ADD THIS SERVER-SIDE VALIDATION ---
+        const picked = new Date(pickupDate);
+        const returned = new Date(returnDate);
+
+        if (returned < picked) {
+      // Send a 400 Bad Request status for invalid data
+            return res.status(400).json({
+            success: false,
+            message: "Invalid date range. Return date cannot be before the pickup date."
+      });
+    }
+    // --- END OF VALIDATION ---
+
         const isAvailable = await checkAvailability(car, pickupDate, returnDate)
         if(!isAvailable){
             return res.json({success: false, message: "Car is not available"})
@@ -51,11 +64,9 @@ export const createBooking = async (req, res)=>{
         const carData = await Car.findById(car)
 
         // Calculate price based on pickupDate and returnDate
-        const picked = new Date(pickupDate);
-        const returned = new Date(returnDate);
-        const noOfDays = Math.ceil((returned - picked) / (1000 * 60 * 60 * 24))
+        const dayDifference = Math.ceil((returned - picked) / (1000 * 60 * 60 * 24));
+        const noOfDays = dayDifference === 0 ? 1 : dayDifference; // A booking must be for at least 1 day
         const price = carData.pricePerDay * noOfDays;
-
         await Booking.create({car, owner: carData.owner, user: _id, pickupDate, returnDate, price})
 
         res.json({success: true, message: "Booking Created"})
